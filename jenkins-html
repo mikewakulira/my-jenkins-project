@@ -1,0 +1,29 @@
+pipeline {
+    agent any
+    tools {
+        maven 'Maven3.9.3'
+    }
+    stages {
+        stages('git') {
+            steps {
+               git branch: 'main', url: 'https://github.com/mikewakulira/my-jenkins-project.git' 
+            }
+        }
+        stage('Build') {
+            steps {
+                 sh 'mvn clean install -f pom.xml'
+            }
+        }
+        stage('Test') {
+            steps {
+                    withSonarqubeEnv('sonarqube') {
+                    sh 'mvn sonar:sonar -f pom.xml'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                deploy adapters: [tomcat9(credentialsId: 'TomcatCreds' , path: '', url: 'http://ec2-52-14-71-190.us-east-2.compute.amazonaws.com:8080/)], contexpath: null, war: 'target/*war'
+            }
+        }
+    }
+}
